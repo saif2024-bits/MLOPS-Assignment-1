@@ -119,22 +119,7 @@ jobs:
 
     - name: Train models
       run: |
-        python -c "
-        from src.train import ModelTrainer
-        from src.preprocessing import load_data
-
-        # Load data
-        X, y = load_data('data/heart_disease_clean.csv')
-
-        # Train models
-        trainer = ModelTrainer(random_state=42)
-        trainer.train_all_models(X, y)
-
-        # Save results
-        trainer.save_results('models/training_results.json')
-
-        print('✅ All models trained successfully')
-        "
+        python src/train.py
 
     - name: Validate model performance
       run: |
