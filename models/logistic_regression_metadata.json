@@ -1,0 +1,24 @@
+{
+    "train_accuracy": 0.8429752066115702,
+    "test_accuracy": 0.8852459016393442,
+    "train_precision": 0.8543689320388349,
+    "test_precision": 0.8387096774193549,
+    "train_recall": 0.7927927927927928,
+    "test_recall": 0.9285714285714286,
+    "train_f1": 0.822429906542056,
+    "test_f1": 0.8813559322033898,
+    "train_roc_auc": 0.9217385324255554,
+    "test_roc_auc": 0.9534632034632035,
+    "confusion_matrix": [
+        [
+            28,
+            5
+        ],
+        [
+            2,
+            26
+        ]
+    ],
+    "model_type": "Logistic Regression",
+    "created_date": "2025-12-22T00:45:21.104320"
+}

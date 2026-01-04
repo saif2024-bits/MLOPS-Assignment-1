@@ -1,0 +1,24 @@
+{
+    "timestamp": "2025-12-22T00:49:03.899101",
+    "experiment_name": "heart-disease-prediction",
+    "best_model": "XGBoost",
+    "best_score": 0.9610389610389609,
+    "best_run_id": "b9ef441e2a6943068773e8de8c159e78",
+    "all_results": {
+        "Logistic Regression": {
+            "test_accuracy": 0.8852459016393442,
+            "test_roc_auc": 0.9534632034632035,
+            "run_id": "1095a02d83634470aed23d592b006461"
+        },
+        "Random Forest": {
+            "test_accuracy": 0.9016393442622951,
+            "test_roc_auc": 0.9523809523809523,
+            "run_id": "230fad4cff274be9b781666bf0794bc2"
+        },
+        "XGBoost": {
+            "test_accuracy": 0.8688524590163934,
+            "test_roc_auc": 0.9610389610389609,
+            "run_id": "b9ef441e2a6943068773e8de8c159e78"
+        }
+    }
+}

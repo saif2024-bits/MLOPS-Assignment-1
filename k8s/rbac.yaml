@@ -1,0 +1,109 @@
+---
+# ServiceAccount for Heart Disease API
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: heart-disease-api-sa
+  namespace: default
+  labels:
+    app: heart-disease-api
+
+---
+# Role for API access within namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: heart-disease-api-role
+  namespace: default
+  labels:
+    app: heart-disease-api
+rules:
+# Allow reading ConfigMaps
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "watch"]
+
+# Allow reading Secrets
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list"]
+
+# Allow pod self-inspection
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+
+---
+# RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: heart-disease-api-rolebinding
+  namespace: default
+  labels:
+    app: heart-disease-api
+subjects:
+- kind: ServiceAccount
+  name: heart-disease-api-sa
+  namespace: default
+roleRef:
+  kind: Role
+  name: heart-disease-api-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# NetworkPolicy for pod communication
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: heart-disease-api-network-policy
+  namespace: default
+  labels:
+    app: heart-disease-api
+spec:
+  podSelector:
+    matchLabels:
+      app: heart-disease-api
+
+  policyTypes:
+  - Ingress
+  - Egress
+
+  ingress:
+  # Allow traffic from ingress controller
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8000
+
+  # Allow traffic from same namespace
+  - from:
+    - podSelector:
+        matchLabels:
+          app: heart-disease-api
+    ports:
+    - protocol: TCP
+      port: 8000
+
+  egress:
+  # Allow DNS
+  - to:
+    - namespaceSelector: {}
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+
+  # Allow external API calls (if needed)
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 80

@@ -1,0 +1,24 @@
+{
+    "train_accuracy": 0.9793388429752066,
+    "test_accuracy": 0.9016393442622951,
+    "train_precision": 0.9732142857142857,
+    "test_precision": 0.8666666666666667,
+    "train_recall": 0.9819819819819819,
+    "test_recall": 0.9285714285714286,
+    "train_f1": 0.9775784753363229,
+    "test_f1": 0.896551724137931,
+    "train_roc_auc": 0.9977993260436008,
+    "test_roc_auc": 0.9523809523809523,
+    "confusion_matrix": [
+        [
+            29,
+            4
+        ],
+        [
+            2,
+            26
+        ]
+    ],
+    "model_type": "Random Forest",
+    "created_date": "2025-12-22T00:45:21.104320"
+}

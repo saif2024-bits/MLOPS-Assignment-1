@@ -1,0 +1,66 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+!README.md
+docs/
+screenshots/
+
+# Notebooks
+notebooks/
+*.ipynb
+.ipynb_checkpoints/
+
+# Tests
+tests/
+pytest.ini
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# MLflow
+mlruns/
+
+# Temporary files
+*.log
+*.tmp
+.DS_Store
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# CI/CD
+.github/
+.pylintrc
+.flake8
+pyproject.toml
+
+# Data (except required dataset)
+data/*.csv
+!data/heart_disease_clean.csv

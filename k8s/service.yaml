@@ -1,0 +1,78 @@
+---
+# Kubernetes Service for Heart Disease Prediction API
+apiVersion: v1
+kind: Service
+metadata:
+  name: heart-disease-api-service
+  namespace: default
+  labels:
+    app: heart-disease-api
+    tier: backend
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"  # For AWS
+    cloud.google.com/load-balancer-type: "Internal"           # For GCP
+spec:
+  type: LoadBalancer
+  selector:
+    app: heart-disease-api
+
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: 8000
+    # nodePort: 30080  # Uncomment for NodePort type
+
+  # Session affinity
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+
+  # External traffic policy
+  externalTrafficPolicy: Cluster
+
+---
+# ClusterIP Service (for internal communication)
+apiVersion: v1
+kind: Service
+metadata:
+  name: heart-disease-api-internal
+  namespace: default
+  labels:
+    app: heart-disease-api
+    tier: backend
+spec:
+  type: ClusterIP
+  selector:
+    app: heart-disease-api
+
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8000
+    targetPort: 8000
+
+  # Session affinity
+  sessionAffinity: None
+
+---
+# Headless Service (for StatefulSet if needed)
+apiVersion: v1
+kind: Service
+metadata:
+  name: heart-disease-api-headless
+  namespace: default
+  labels:
+    app: heart-disease-api
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app: heart-disease-api
+
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8000
+    targetPort: 8000

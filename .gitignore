@@ -1,0 +1,98 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+
+# MLflow
+mlruns/
+mlartifacts/
+
+# Models (keep model cards, ignore large binary files)
+models/*.pkl
+models/*.joblib
+models/*.h5
+models/*.onnx
+!models/*_model_card.md
+!models/*_metadata.json
+
+# Data (keep download script, ignore large datasets)
+data/*.csv
+!data/download_data.py
+!data/README.md
+
+# Logs
+logs/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Environment variables
+.env
+.env.local
+
+# Screenshots (keep them for documentation)
+# Uncomment if screenshots are too large
+# screenshots/*.png
+# screenshots/*.jpg
+
+# Docker
+*.tar
+
+# Kubernetes secrets (if any)
+k8s/secrets.yaml
+k8s/*-secret.yaml
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# OS
+.DS_Store
+Thumbs.db

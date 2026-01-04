@@ -1,0 +1,38 @@
+# Heart Disease Prediction - Production Requirements
+# Generated: December 2025
+# Python: 3.11
+
+# Core Data Science
+pandas==2.3.3
+numpy==2.4.0
+scipy==1.16.3
+
+# Machine Learning
+scikit-learn==1.8.0
+xgboost==3.1.2
+
+# Visualization
+matplotlib==3.10.8
+seaborn==0.13.2
+
+# MLflow & Experiment Tracking
+mlflow==3.8.0
+mlflow-skinny==3.8.0
+
+# API Framework (for Task 6)
+fastapi==0.127.0
+uvicorn==0.40.0
+pydantic==2.12.5
+
+# Monitoring (for Task 8)
+prometheus-client==0.21.1
+
+# Utilities
+python-dateutil==2.9.0.post0
+PyYAML==6.0.3
+python-dotenv==1.2.1
+requests==2.32.5
+
+# Testing (for Task 5)
+pytest==8.3.5
+pytest-cov==6.0.0

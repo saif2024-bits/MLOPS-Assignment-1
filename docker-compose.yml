@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # Heart Disease Prediction API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: heart-disease-api
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_DIR=/app/models
+      - MODEL_NAME=xgboost
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Mount models directory for easy model updates
+      - ./models:/app/models:ro
+      # Mount logs directory
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - ml-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Optional: Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: heart-disease-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+    networks:
+      - ml-network
+    restart: unless-stopped
+    profiles:
+      - with-nginx
+
+networks:
+  ml-network:
+    driver: bridge
+
+volumes:
+  model-data:
+  logs-data:

@@ -1,0 +1,205 @@
+---
+# Kubernetes Deployment for Heart Disease Prediction API
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: heart-disease-api
+  namespace: default
+  labels:
+    app: heart-disease-api
+    version: v1.0.0
+    tier: backend
+    component: ml-api
+spec:
+  # Deployment strategy
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+
+  # Pod selector
+  selector:
+    matchLabels:
+      app: heart-disease-api
+
+  # Pod template
+  template:
+    metadata:
+      labels:
+        app: heart-disease-api
+        version: v1.0.0
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+
+    spec:
+      # Security context
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+
+      # Init containers (optional - for pre-checks)
+      initContainers:
+      - name: check-model-files
+        image: busybox:1.35
+        command: ['sh', '-c', 'echo "Checking model files..." && ls -la /app/models/ || true']
+        volumeMounts:
+        - name: model-storage
+          mountPath: /app/models
+          readOnly: true
+
+      # Main application container
+      containers:
+      - name: api
+        image: heart-disease-api:latest
+        imagePullPolicy: IfNotPresent
+
+        # Container ports
+        ports:
+        - name: http
+          containerPort: 8000
+          protocol: TCP
+
+        # Environment variables
+        env:
+        - name: MODEL_DIR
+          value: "/app/models"
+        - name: MODEL_NAME
+          value: "xgboost"
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        - name: WORKERS
+          value: "2"
+
+        # Environment from ConfigMap
+        envFrom:
+        - configMapRef:
+            name: heart-disease-api-config
+            optional: true
+
+        # Resource limits and requests
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+
+        # Liveness probe
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+
+        # Readiness probe
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+          successThreshold: 1
+
+        # Startup probe (for slow-starting containers)
+        startupProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 0
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 30
+          successThreshold: 1
+
+        # Volume mounts
+        volumeMounts:
+        - name: model-storage
+          mountPath: /app/models
+          readOnly: true
+        - name: logs
+          mountPath: /app/logs
+
+        # Security context
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          capabilities:
+            drop:
+            - ALL
+
+      # Volumes
+      volumes:
+      - name: model-storage
+        persistentVolumeClaim:
+          claimName: heart-disease-models-pvc
+      - name: logs
+        emptyDir: {}
+
+      # Node affinity (optional - for GPU nodes if needed)
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - heart-disease-api
+              topologyKey: kubernetes.io/hostname
+
+      # Restart policy
+      restartPolicy: Always
+
+      # DNS policy
+      dnsPolicy: ClusterFirst
+
+      # Termination grace period
+      terminationGracePeriodSeconds: 30
+
+---
+# PersistentVolumeClaim for model storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: heart-disease-models-pvc
+  namespace: default
+  labels:
+    app: heart-disease-api
+spec:
+  accessModes:
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: standard
+
+---
+# ConfigMap for application configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: heart-disease-api-config
+  namespace: default
+  labels:
+    app: heart-disease-api
+data:
+  LOG_LEVEL: "INFO"
+  WORKERS: "2"
+  TIMEOUT: "60"
+  MAX_REQUESTS: "1000"
