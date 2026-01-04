@@ -8,9 +8,14 @@ import pandas as pd
 import numpy as np
 import sys
 import os
+from pathlib import Path
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+
+# Define data path
+PROJECT_ROOT = Path(__file__).parent.parent
+DATA_PATH = str(PROJECT_ROOT / 'data' / 'heart_disease_clean.csv')
 
 from preprocessing import (
     load_data,
@@ -26,7 +31,7 @@ class TestDataLoading:
 
     def test_load_data_returns_correct_shapes(self):
         """Test that load_data returns correct X and y shapes"""
-        X, y = load_data('data/heart_disease_clean.csv')
+        X, y = load_data(DATA_PATH)
 
         assert isinstance(X, pd.DataFrame), "X should be a DataFrame"
         assert isinstance(y, pd.Series), "y should be a Series"
@@ -36,7 +41,7 @@ class TestDataLoading:
 
     def test_load_data_correct_columns(self):
         """Test that loaded data has correct columns"""
-        X, y = load_data('data/heart_disease_clean.csv')
+        X, y = load_data(DATA_PATH)
 
         expected_columns = ['age', 'sex', 'cp', 'trestbps', 'chol', 'fbs',
                           'restecg', 'thalach', 'exang', 'oldpeak', 'slope', 'ca', 'thal']
@@ -45,14 +50,14 @@ class TestDataLoading:
 
     def test_load_data_no_missing_values(self):
         """Test that loaded data has no missing values"""
-        X, y = load_data('data/heart_disease_clean.csv')
+        X, y = load_data(DATA_PATH)
 
         assert X.isnull().sum().sum() == 0, "X should have no missing values"
         assert y.isnull().sum() == 0, "y should have no missing values"
 
     def test_load_data_target_binary(self):
         """Test that target is binary (0 or 1)"""
-        X, y = load_data('data/heart_disease_clean.csv')
+        X, y = load_data(DATA_PATH)
 
         assert set(y.unique()).issubset({0, 1}), "Target should be binary (0, 1)"
 
@@ -162,7 +167,7 @@ class TestPreprocessingPipeline:
 
     def setup_method(self):
         """Setup test data"""
-        self.X, self.y = load_data('data/heart_disease_clean.csv')
+        self.X, self.y = load_data(DATA_PATH)
 
     def test_pipeline_creation(self):
         """Test that pipeline is created successfully"""

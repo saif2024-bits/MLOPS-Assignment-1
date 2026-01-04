@@ -18,6 +18,10 @@ from sklearn.linear_model import LogisticRegression
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
+# Define data path
+PROJECT_ROOT = Path(__file__).parent.parent
+DATA_PATH = str(PROJECT_ROOT / 'data' / 'heart_disease_clean.csv')
+
 from model_pipeline import HeartDiseasePredictor, save_model_package
 from preprocessing import load_data, create_preprocessing_pipeline
 from train import ModelTrainer
@@ -40,12 +44,12 @@ class TestHeartDiseasePredictor:
     def setup_class(cls):
         """Setup models for testing (once for all tests)"""
         if not hasattr(cls, 'feature_names'):
-            X, _ = load_data('data/heart_disease_clean.csv')
+            X, _ = load_data(DATA_PATH)
             cls.feature_names = X.columns.tolist()
 
         model_dir = Path('models')
         # Always retrain to ensure consistency with current code
-        X, y = load_data('data/heart_disease_clean.csv')
+        X, y = load_data(DATA_PATH)
         
         pipeline = create_preprocessing_pipeline(
             handle_outliers=True,
@@ -240,7 +244,7 @@ class TestModelPackageSaving:
 
     def test_save_model_package(self):
         """Test saving complete model package"""
-        X, y = load_data('data/heart_disease_clean.csv')
+        X, y = load_data(DATA_PATH)
         pipeline = create_preprocessing_pipeline(
             handle_outliers=True,
             feature_engineering=True
@@ -275,7 +279,7 @@ class TestModelPackageSaving:
 
     def test_load_saved_package(self):
         """Test loading saved model package"""
-        X, y = load_data('data/heart_disease_clean.csv')
+        X, y = load_data(DATA_PATH)
         pipeline = create_preprocessing_pipeline(
             handle_outliers=True,
             feature_engineering=True
@@ -382,7 +386,7 @@ class TestIntegrationWithRealData:
 
     def setup_method(self):
         """Setup with real data"""
-        self.X, self.y = load_data('data/heart_disease_clean.csv')
+        self.X, self.y = load_data(DATA_PATH)
         self.predictor = HeartDiseasePredictor(model_dir='models/')
         self.predictor.load_models(model_name='xgboost')
 

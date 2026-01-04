@@ -16,6 +16,10 @@ from sklearn.model_selection import train_test_split
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
+# Define data path
+PROJECT_ROOT = Path(__file__).parent.parent
+DATA_PATH = str(PROJECT_ROOT / 'data' / 'heart_disease_clean.csv')
+
 from train import ModelTrainer
 from preprocessing import load_data
 
@@ -26,7 +30,7 @@ class TestModelTrainer:
     def setup_method(self):
         """Setup test data and trainer"""
         # Load actual data
-        self.X, self.y = load_data('data/heart_disease_clean.csv')
+        self.X, self.y = load_data(DATA_PATH)
 
         # Split data once for all tests
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
@@ -223,7 +227,7 @@ class TestModelSaving:
 
     def setup_method(self):
         """Setup test data"""
-        self.X, self.y = load_data('data/heart_disease_clean.csv')
+        self.X, self.y = load_data(DATA_PATH)
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
             self.X, self.y, test_size=0.2, random_state=42
         )
@@ -298,7 +302,7 @@ class TestModelPerformance:
 
     def setup_method(self):
         """Setup test data"""
-        self.X, self.y = load_data('data/heart_disease_clean.csv')
+        self.X, self.y = load_data(DATA_PATH)
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
             self.X, self.y, test_size=0.2, random_state=42
         )
