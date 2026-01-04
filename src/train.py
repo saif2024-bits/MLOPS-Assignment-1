@@ -16,10 +16,16 @@ from sklearn.metrics import (
 )
 import pickle
 import os
+import sys
 import json
 from datetime import datetime
 import matplotlib.pyplot as plt
 import seaborn as sns
+from pathlib import Path
+
+# Add project root to path to allow imports from anywhere
+PROJECT_ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(PROJECT_ROOT / 'src'))
 
 from preprocessing import load_data, create_preprocessing_pipeline
 
@@ -423,13 +429,22 @@ def main():
     """
     Main training pipeline
     """
+    # Define paths relative to project root
+    data_path = PROJECT_ROOT / "data" / "heart_disease_clean.csv"
+    models_dir = PROJECT_ROOT / "models"
+    screenshots_dir = PROJECT_ROOT / "screenshots"
+
+    # Create directories if they don't exist
+    models_dir.mkdir(exist_ok=True)
+    screenshots_dir.mkdir(exist_ok=True)
+
     print("="*70)
     print("HEART DISEASE PREDICTION - MODEL TRAINING")
     print("="*70)
 
     # Load data
     print("\n1. Loading data...")
-    X, y = load_data("../data/heart_disease_clean.csv")
+    X, y = load_data(str(data_path))
     print(f"   Data shape: {X.shape}")
     print(f"   Target distribution:\n{y.value_counts()}")
 
@@ -475,18 +490,23 @@ def main():
     print("\n9. Saving models and results...")
     for model_name, model in trainer.models.items():
         safe_name = model_name.lower().replace(' ', '_')
-        trainer.save_model(model, f"../models/{safe_name}_model.pkl")
+        model_path = models_dir / f"{safe_name}_model.pkl"
+        trainer.save_model(model, str(model_path))
 
-    trainer.save_results("../models/training_results.json")
+    results_path = models_dir / "training_results.json"
+    trainer.save_results(str(results_path))
 
     # Save preprocessing pipeline
     from preprocessing import save_pipeline
-    save_pipeline(preprocessing_pipeline, "../models/preprocessing_pipeline.pkl")
+    pipeline_path = models_dir / "preprocessing_pipeline.pkl"
+    save_pipeline(preprocessing_pipeline, str(pipeline_path))
 
     # Generate visualizations
     print("\n10. Generating visualizations...")
-    trainer.plot_model_comparison(save_path="../screenshots/model_comparison.png")
-    trainer.plot_roc_curves(X_test, y_test, save_path="../screenshots/roc_curves.png")
+    comparison_path = screenshots_dir / "model_comparison.png"
+    roc_path = screenshots_dir / "roc_curves.png"
+    trainer.plot_model_comparison(save_path=str(comparison_path))
+    trainer.plot_roc_curves(X_test, y_test, save_path=str(roc_path))
 
     # Print summary
     print("\n" + "="*70)
@@ -494,8 +514,8 @@ def main():
     print("="*70)
     print(f"\nBest Model: {best_name}")
     print(f"Test ROC-AUC: {best_score:.4f}")
-    print(f"\nAll models saved to: ../models/")
-    print(f"Results saved to: ../models/training_results.json")
+    print(f"\nAll models saved to: {models_dir}")
+    print(f"Results saved to: {results_path}")
     print("="*70)
 
 
