@@ -16,8 +16,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy requirements
 COPY requirements_production.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir --user -r requirements_production.txt
+# Install Python dependencies to /opt/app
+RUN pip install --no-cache-dir --target=/opt/app -r requirements_production.txt
 
 # Stage 2: Runtime stage
 FROM python:3.11-slim
@@ -26,7 +26,11 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Copy Python dependencies from builder
-COPY --from=builder /root/.local /root/.local
+COPY --from=builder /opt/app /opt/app
+
+# Set Python path
+ENV PYTHONPATH=/opt/app:$PYTHONPATH
+ENV PATH=/opt/app/bin:$PATH
 
 # Make sure scripts in .local are usable
 ENV PATH=/root/.local/bin:$PATH
@@ -37,18 +41,21 @@ COPY src/ ./src/
 COPY models/ ./models/
 COPY data/heart_disease_clean.csv ./data/heart_disease_clean.csv
 
-# Create non-root user for security
-RUN useradd -m -u 1000 appuser && \
-    chown -R appuser:appuser /app
-
-# Switch to non-root user
-USER appuser
+# Create logs directory
+RUN mkdir -p /app/logs
 
 # Set environment variables
 ENV MODEL_DIR=/app/models
 ENV MODEL_NAME=xgboost
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
+
+# Create non-root user for security
+RUN useradd -m -u 1000 appuser && \
+    chown -R appuser:appuser /app /opt/app
+
+# Switch to non-root user
+USER appuser
 
 # Expose port
 EXPOSE 8000
