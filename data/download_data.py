@@ -90,8 +90,17 @@ def main():
     # Download the data
     df = download_heart_disease_data()
 
-    # Save to CSV
-    filepath = save_data(df)
+    # Save raw data
+    filepath = save_data(df, 'heart_disease.csv')
+
+    # Clean the data (handle missing values)
+    df_clean = df.copy()
+    # Fill missing values with median for numerical columns
+    df_clean['ca'] = df_clean['ca'].fillna(df_clean['ca'].median())
+    df_clean['thal'] = df_clean['thal'].fillna(df_clean['thal'].median())
+
+    # Save cleaned data
+    save_data(df_clean, 'heart_disease_clean.csv')
 
     # Display basic info
     print("\n" + "="*70)
