@@ -271,7 +271,7 @@ jobs:
         print(f'Result: {result}')
 
         assert 'prediction' in result, f'Missing prediction key. Result: {result}'
-        assert 'probability' in result, f'Missing probability key. Result: {result}'
+        assert 'probabilities' in result, f'Missing probabilities key. Result: {result}'
         assert result['prediction'] in [0, 1], f'Invalid prediction value: {result[\"prediction\"]}'
 
         print(f'✅ Prediction test passed: {result}')
