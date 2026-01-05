@@ -16,6 +16,7 @@ from sklearn.metrics import (
 )
 import pickle
 import os
+import sys
 import json
 from datetime import datetime
 import matplotlib.pyplot as plt
@@ -24,6 +25,10 @@ import mlflow
 import mlflow.sklearn
 import mlflow.xgboost
 from pathlib import Path
+
+# Add project root to path to allow imports from anywhere
+PROJECT_ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(PROJECT_ROOT / 'src'))
 
 from preprocessing import load_data, create_preprocessing_pipeline
 
@@ -437,13 +442,20 @@ def main():
     """
     Main MLflow training pipeline
     """
+    # Define paths relative to project root
+    data_path = PROJECT_ROOT / "data" / "heart_disease_clean.csv"
+    models_dir = PROJECT_ROOT / "models"
+
+    # Create directories if they don't exist
+    models_dir.mkdir(exist_ok=True)
+
     print("="*70)
     print("HEART DISEASE PREDICTION - MLFLOW EXPERIMENT TRACKING")
     print("="*70)
 
     # Load data
     print("\n1. Loading data...")
-    X, y = load_data("../data/heart_disease_clean.csv")
+    X, y = load_data(str(data_path))
     print(f"   Data shape: {X.shape}")
 
     # Preprocessing
@@ -507,9 +519,8 @@ def main():
         }
     }
 
-    results_path = "../models/mlflow_results.json"
-    os.makedirs(os.path.dirname(results_path), exist_ok=True)
-    with open(results_path, 'w') as f:
+    results_path = models_dir / "mlflow_results.json"
+    with open(str(results_path), 'w') as f:
         json.dump(results_summary, f, indent=4)
     print(f"   Results saved to: {results_path}")
 
@@ -520,7 +531,7 @@ def main():
     print(f"\nBest Model: {best_name}")
     print(f"Test ROC-AUC: {best_score:.4f}")
     print(f"\nTo view experiments in MLflow UI:")
-    print(f"  cd /Users/saif.afzal/Documents/M.Tech/MLOPS/heart-disease-mlops")
+    print(f"  cd {PROJECT_ROOT}")
     print(f"  mlflow ui")
     print(f"  Then open: http://127.0.0.1:5000")
     print("\n" + "="*70)

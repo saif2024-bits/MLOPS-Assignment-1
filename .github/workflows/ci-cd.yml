@@ -190,22 +190,7 @@ jobs:
 
     - name: Run MLflow experiments
       run: |
-        python -c "
-        from src.train_mlflow import MLflowModelTrainer
-        from src.preprocessing import load_data
-
-        # Load data
-        X, y = load_data('data/heart_disease_clean.csv')
-
-        # Run experiments
-        trainer = MLflowModelTrainer(
-            experiment_name='Heart-Disease-CI-CD',
-            random_state=42
-        )
-        trainer.train_all_models_with_mlflow(X, y)
-
-        print('✅ MLflow experiments completed')
-        "
+        python src/train_mlflow.py
 
     - name: Upload MLflow artifacts
       uses: actions/upload-artifact@v4
