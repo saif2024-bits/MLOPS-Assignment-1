@@ -250,7 +250,11 @@ jobs:
     - name: Test model loading and prediction
       run: |
         python -c "
-        from src.model_pipeline import HeartDiseasePredictor
+        import sys
+        from pathlib import Path
+        sys.path.insert(0, 'src')
+
+        from model_pipeline import HeartDiseasePredictor
 
         # Test predictor
         predictor = HeartDiseasePredictor(model_dir='models/')
@@ -264,10 +268,11 @@ jobs:
         }
 
         result = predictor.predict(patient)
+        print(f'Result: {result}')
 
-        assert 'prediction' in result
-        assert 'probability' in result
-        assert result['prediction'] in [0, 1]
+        assert 'prediction' in result, f'Missing prediction key. Result: {result}'
+        assert 'probability' in result, f'Missing probability key. Result: {result}'
+        assert result['prediction'] in [0, 1], f'Invalid prediction value: {result[\"prediction\"]}'
 
         print(f'✅ Prediction test passed: {result}')
         "
