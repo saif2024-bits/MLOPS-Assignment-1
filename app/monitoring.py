@@ -3,12 +3,19 @@ Monitoring and metrics collection for Heart Disease Prediction API
 Provides Prometheus metrics and request tracking
 """
 
+import logging
 import time
 from typing import Callable
+
 from fastapi import Request, Response
-from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
-from prometheus_client import CollectorRegistry
-import logging
+from prometheus_client import (
+    CONTENT_TYPE_LATEST,
+    CollectorRegistry,
+    Counter,
+    Gauge,
+    Histogram,
+    generate_latest,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -17,64 +24,60 @@ registry = CollectorRegistry()
 
 # Define Prometheus metrics
 REQUEST_COUNT = Counter(
-    'api_requests_total',
-    'Total number of API requests',
-    ['method', 'endpoint', 'status'],
-    registry=registry
+    "api_requests_total",
+    "Total number of API requests",
+    ["method", "endpoint", "status"],
+    registry=registry,
 )
 
 REQUEST_DURATION = Histogram(
-    'api_request_duration_seconds',
-    'API request duration in seconds',
-    ['method', 'endpoint'],
+    "api_request_duration_seconds",
+    "API request duration in seconds",
+    ["method", "endpoint"],
     registry=registry,
-    buckets=(0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 2.5, 5.0, 7.5, 10.0)
+    buckets=(0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 2.5, 5.0, 7.5, 10.0),
 )
 
 PREDICTION_COUNT = Counter(
-    'predictions_total',
-    'Total number of predictions made',
-    ['prediction_class'],
-    registry=registry
+    "predictions_total",
+    "Total number of predictions made",
+    ["prediction_class"],
+    registry=registry,
 )
 
 PREDICTION_CONFIDENCE = Histogram(
-    'prediction_confidence',
-    'Prediction confidence scores',
+    "prediction_confidence",
+    "Prediction confidence scores",
     registry=registry,
-    buckets=(0.5, 0.6, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99, 1.0)
+    buckets=(0.5, 0.6, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99, 1.0),
 )
 
 BATCH_SIZE = Histogram(
-    'batch_prediction_size',
-    'Size of batch predictions',
+    "batch_prediction_size",
+    "Size of batch predictions",
     registry=registry,
-    buckets=(1, 5, 10, 20, 50, 100)
+    buckets=(1, 5, 10, 20, 50, 100),
 )
 
 MODEL_LOAD_TIME = Gauge(
-    'model_load_time_seconds',
-    'Time taken to load the model',
-    registry=registry
+    "model_load_time_seconds", "Time taken to load the model", registry=registry
 )
 
 ACTIVE_REQUESTS = Gauge(
-    'active_requests',
-    'Number of requests currently being processed',
-    registry=registry
+    "active_requests", "Number of requests currently being processed", registry=registry
 )
 
 ERROR_COUNT = Counter(
-    'api_errors_total',
-    'Total number of API errors',
-    ['error_type', 'endpoint'],
-    registry=registry
+    "api_errors_total",
+    "Total number of API errors",
+    ["error_type", "endpoint"],
+    registry=registry,
 )
 
 HEALTH_STATUS = Gauge(
-    'api_health_status',
-    'API health status (1 = healthy, 0 = unhealthy)',
-    registry=registry
+    "api_health_status",
+    "API health status (1 = healthy, 0 = unhealthy)",
+    registry=registry,
 )
 
 
@@ -156,7 +159,4 @@ def set_health_status(is_healthy: bool):
 
 def metrics_endpoint():
     """Generate Prometheus metrics in the expected format"""
-    return Response(
-        content=generate_latest(registry),
-        media_type=CONTENT_TYPE_LATEST
-    )
+    return Response(content=generate_latest(registry), media_type=CONTENT_TYPE_LATEST)

@@ -3,14 +3,15 @@ Preprocessing module for Heart Disease Prediction
 Implements sklearn pipelines for data transformation
 """
 
-import pandas as pd
-import numpy as np
-from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
-import pickle
 import os
+import pickle
+
+import numpy as np
+import pandas as pd
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 
 class FeatureEngineering(BaseEstimator, TransformerMixin):
@@ -52,32 +53,34 @@ class FeatureEngineering(BaseEstimator, TransformerMixin):
 
         if self.create_interactions:
             # Age-based risk categories
-            X_copy['age_risk'] = pd.cut(X_copy['age'],
-                                        bins=[0, 45, 55, 65, 100],
-                                        labels=[0, 1, 2, 3]).astype(float)
+            X_copy["age_risk"] = pd.cut(
+                X_copy["age"], bins=[0, 45, 55, 65, 100], labels=[0, 1, 2, 3]
+            ).astype(float)
 
             # Cholesterol risk levels
-            X_copy['chol_risk'] = pd.cut(X_copy['chol'],
-                                         bins=[0, 200, 240, 500],
-                                         labels=[0, 1, 2]).astype(float)
+            X_copy["chol_risk"] = pd.cut(
+                X_copy["chol"], bins=[0, 200, 240, 500], labels=[0, 1, 2]
+            ).astype(float)
 
             # Blood pressure risk
-            X_copy['bp_risk'] = pd.cut(X_copy['trestbps'],
-                                       bins=[0, 120, 140, 200],
-                                       labels=[0, 1, 2]).astype(float)
+            X_copy["bp_risk"] = pd.cut(
+                X_copy["trestbps"], bins=[0, 120, 140, 200], labels=[0, 1, 2]
+            ).astype(float)
 
             # Heart rate reserve (indicator of fitness)
-            max_hr = 220 - X_copy['age']
-            X_copy['hr_reserve'] = max_hr - X_copy['thalach']
+            max_hr = 220 - X_copy["age"]
+            X_copy["hr_reserve"] = max_hr - X_copy["thalach"]
 
             # Exercise capacity (interaction)
-            X_copy['exercise_capacity'] = X_copy['thalach'] / (X_copy['age'] + 1)
+            X_copy["exercise_capacity"] = X_copy["thalach"] / (X_copy["age"] + 1)
 
             # Critical interaction: chest pain type with exercise angina
-            X_copy['cp_exang_interaction'] = X_copy['cp'] * X_copy['exang']
+            X_copy["cp_exang_interaction"] = X_copy["cp"] * X_copy["exang"]
 
             # Age and cholesterol interaction
-            X_copy['age_chol_interaction'] = (X_copy['age'] / 100) * (X_copy['chol'] / 100)
+            X_copy["age_chol_interaction"] = (X_copy["age"] / 100) * (
+                X_copy["chol"] / 100
+            )
 
         return X_copy
 
@@ -88,10 +91,17 @@ class FeatureEngineering(BaseEstimator, TransformerMixin):
 
         output_features = list(input_features)
         if self.create_interactions:
-            output_features.extend([
-                'age_risk', 'chol_risk', 'bp_risk', 'hr_reserve',
-                'exercise_capacity', 'cp_exang_interaction', 'age_chol_interaction'
-            ])
+            output_features.extend(
+                [
+                    "age_risk",
+                    "chol_risk",
+                    "bp_risk",
+                    "hr_reserve",
+                    "exercise_capacity",
+                    "cp_exang_interaction",
+                    "age_chol_interaction",
+                ]
+            )
         return np.array(output_features)
 
 
@@ -100,7 +110,7 @@ class OutlierHandler(BaseEstimator, TransformerMixin):
     Handles outliers using IQR-based clipping
     """
 
-    def __init__(self, method='iqr', factor=1.5):
+    def __init__(self, method="iqr", factor=1.5):
         """
         Initialize outlier handler
 
@@ -132,7 +142,7 @@ class OutlierHandler(BaseEstimator, TransformerMixin):
         numerical_cols = X.select_dtypes(include=[np.number]).columns
 
         for col in numerical_cols:
-            if self.method == 'iqr':
+            if self.method == "iqr":
                 Q1 = X[col].quantile(0.25)
                 Q3 = X[col].quantile(0.75)
                 IQR = Q3 - Q1
@@ -194,8 +204,8 @@ def load_data(filepath):
     df = pd.read_csv(filepath)
 
     # Separate features and target
-    X = df.drop('target', axis=1)
-    y = df['target']
+    X = df.drop("target", axis=1)
+    y = df["target"]
 
     return X, y
 
@@ -220,14 +230,16 @@ def create_preprocessing_pipeline(handle_outliers=True, feature_engineering=True
 
     # Step 1: Outlier handling (optional)
     if handle_outliers:
-        steps.append(('outlier_handler', OutlierHandler(method='iqr', factor=1.5)))
+        steps.append(("outlier_handler", OutlierHandler(method="iqr", factor=1.5)))
 
     # Step 2: Feature engineering (optional)
     if feature_engineering:
-        steps.append(('feature_engineering', FeatureEngineering(create_interactions=True)))
+        steps.append(
+            ("feature_engineering", FeatureEngineering(create_interactions=True))
+        )
 
     # Step 3: Scaling
-    steps.append(('scaler', StandardScaler()))
+    steps.append(("scaler", StandardScaler()))
 
     pipeline = Pipeline(steps)
 
@@ -246,7 +258,7 @@ def save_pipeline(pipeline, filepath):
         Path where to save the pipeline
     """
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    with open(filepath, 'wb') as f:
+    with open(filepath, "wb") as f:
         pickle.dump(pipeline, f)
     print(f"Pipeline saved to: {filepath}")
 
@@ -265,7 +277,7 @@ def load_pipeline(filepath):
     Pipeline
         Loaded sklearn pipeline
     """
-    with open(filepath, 'rb') as f:
+    with open(filepath, "rb") as f:
         pipeline = pickle.load(f)
     print(f"Pipeline loaded from: {filepath}")
     return pipeline
@@ -281,24 +293,33 @@ def get_feature_info():
         Dictionary containing feature information
     """
     feature_info = {
-        'numerical_features': ['age', 'trestbps', 'chol', 'thalach', 'oldpeak'],
-        'categorical_features': ['sex', 'cp', 'fbs', 'restecg', 'exang', 'slope', 'ca', 'thal'],
-        'feature_descriptions': {
-            'age': 'Age in years',
-            'sex': 'Sex (1 = male; 0 = female)',
-            'cp': 'Chest pain type (1-4)',
-            'trestbps': 'Resting blood pressure (mm Hg)',
-            'chol': 'Serum cholesterol (mg/dl)',
-            'fbs': 'Fasting blood sugar > 120 mg/dl (1 = true; 0 = false)',
-            'restecg': 'Resting electrocardiographic results (0-2)',
-            'thalach': 'Maximum heart rate achieved',
-            'exang': 'Exercise induced angina (1 = yes; 0 = no)',
-            'oldpeak': 'ST depression induced by exercise',
-            'slope': 'Slope of peak exercise ST segment (1-3)',
-            'ca': 'Number of major vessels colored by fluoroscopy (0-3)',
-            'thal': 'Thalassemia (3 = normal; 6 = fixed defect; 7 = reversible defect)',
-            'target': 'Heart disease presence (1 = disease; 0 = no disease)'
-        }
+        "numerical_features": ["age", "trestbps", "chol", "thalach", "oldpeak"],
+        "categorical_features": [
+            "sex",
+            "cp",
+            "fbs",
+            "restecg",
+            "exang",
+            "slope",
+            "ca",
+            "thal",
+        ],
+        "feature_descriptions": {
+            "age": "Age in years",
+            "sex": "Sex (1 = male; 0 = female)",
+            "cp": "Chest pain type (1-4)",
+            "trestbps": "Resting blood pressure (mm Hg)",
+            "chol": "Serum cholesterol (mg/dl)",
+            "fbs": "Fasting blood sugar > 120 mg/dl (1 = true; 0 = false)",
+            "restecg": "Resting electrocardiographic results (0-2)",
+            "thalach": "Maximum heart rate achieved",
+            "exang": "Exercise induced angina (1 = yes; 0 = no)",
+            "oldpeak": "ST depression induced by exercise",
+            "slope": "Slope of peak exercise ST segment (1-3)",
+            "ca": "Number of major vessels colored by fluoroscopy (0-3)",
+            "thal": "Thalassemia (3 = normal; 6 = fixed defect; 7 = reversible defect)",
+            "target": "Heart disease presence (1 = disease; 0 = no disease)",
+        },
     }
     return feature_info
 
@@ -307,9 +328,9 @@ if __name__ == "__main__":
     """
     Example usage and testing
     """
-    print("="*70)
+    print("=" * 70)
     print("PREPROCESSING PIPELINE DEMONSTRATION")
-    print("="*70)
+    print("=" * 70)
 
     # Load data
     data_path = "../data/heart_disease_clean.csv"
@@ -320,8 +341,7 @@ if __name__ == "__main__":
 
     # Create pipeline
     pipeline = create_preprocessing_pipeline(
-        handle_outliers=True,
-        feature_engineering=True
+        handle_outliers=True, feature_engineering=True
     )
 
     print(f"\nPipeline steps:")
@@ -347,10 +367,12 @@ if __name__ == "__main__":
 
     # Feature info
     feature_info = get_feature_info()
-    print(f"\nTotal features: {len(feature_info['numerical_features']) + len(feature_info['categorical_features'])}")
+    print(
+        f"\nTotal features: {len(feature_info['numerical_features']) + len(feature_info['categorical_features'])}"
+    )
     print(f"  - Numerical: {len(feature_info['numerical_features'])}")
     print(f"  - Categorical: {len(feature_info['categorical_features'])}")
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("PREPROCESSING MODULE READY!")
-    print("="*70)
+    print("=" * 70)

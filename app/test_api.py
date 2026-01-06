@@ -3,9 +3,10 @@ API Testing Script
 Tests the Heart Disease Prediction API endpoints
 """
 
-import requests
 import json
 from typing import Dict, List
+
+import requests
 
 # API base URL
 BASE_URL = "http://localhost:8000"
@@ -37,8 +38,8 @@ def test_health():
 
     assert response.status_code == 200, "Health endpoint should return 200"
     data = response.json()
-    assert data['status'] == 'healthy', "API should be healthy"
-    assert data['model_loaded'] == True, "Model should be loaded"
+    assert data["status"] == "healthy", "API should be healthy"
+    assert data["model_loaded"] == True, "Model should be loaded"
     print("✅ Health check test PASSED")
 
 
@@ -54,9 +55,9 @@ def test_model_info():
 
     assert response.status_code == 200, "Model info endpoint should return 200"
     data = response.json()
-    assert 'model_name' in data, "Should have model_name"
-    assert 'features_required' in data, "Should have features_required"
-    assert len(data['features_required']) == 13, "Should have 13 features"
+    assert "model_name" in data, "Should have model_name"
+    assert "features_required" in data, "Should have features_required"
+    assert len(data["features_required"]) == 13, "Should have 13 features"
     print("✅ Model info test PASSED")
 
 
@@ -68,12 +69,14 @@ def test_features():
 
     response = requests.get(f"{BASE_URL}/features")
     print(f"Status Code: {response.status_code}")
-    print(f"Response (first 500 chars): {json.dumps(response.json(), indent=2)[:500]}...")
+    print(
+        f"Response (first 500 chars): {json.dumps(response.json(), indent=2)[:500]}..."
+    )
 
     assert response.status_code == 200, "Features endpoint should return 200"
     data = response.json()
-    assert 'features' in data, "Should have features"
-    assert data['count'] == 13, "Should have 13 features"
+    assert "features" in data, "Should have features"
+    assert data["count"] == 13, "Should have 13 features"
     print("✅ Features test PASSED")
 
 
@@ -97,7 +100,7 @@ def test_single_prediction():
         "oldpeak": 2.3,
         "slope": 3,
         "ca": 0,
-        "thal": 6
+        "thal": 6,
     }
 
     print(f"Input: {json.dumps(patient, indent=2)}")
@@ -108,9 +111,9 @@ def test_single_prediction():
 
     assert response.status_code == 200, "Prediction should return 200"
     data = response.json()
-    assert 'prediction' in data, "Should have prediction"
-    assert 'diagnosis' in data, "Should have diagnosis"
-    assert data['prediction'] in [0, 1], "Prediction should be 0 or 1"
+    assert "prediction" in data, "Should have prediction"
+    assert "diagnosis" in data, "Should have diagnosis"
+    assert data["prediction"] in [0, 1], "Prediction should be 0 or 1"
     print("✅ Single prediction test PASSED")
 
     return data
@@ -126,20 +129,50 @@ def test_batch_prediction():
     patients = {
         "patients": [
             {
-                "age": 63, "sex": 1, "cp": 1, "trestbps": 145,
-                "chol": 233, "fbs": 1, "restecg": 2, "thalach": 150,
-                "exang": 0, "oldpeak": 2.3, "slope": 3, "ca": 0, "thal": 6
+                "age": 63,
+                "sex": 1,
+                "cp": 1,
+                "trestbps": 145,
+                "chol": 233,
+                "fbs": 1,
+                "restecg": 2,
+                "thalach": 150,
+                "exang": 0,
+                "oldpeak": 2.3,
+                "slope": 3,
+                "ca": 0,
+                "thal": 6,
             },
             {
-                "age": 67, "sex": 1, "cp": 4, "trestbps": 160,
-                "chol": 286, "fbs": 0, "restecg": 2, "thalach": 108,
-                "exang": 1, "oldpeak": 1.5, "slope": 2, "ca": 3, "thal": 3
+                "age": 67,
+                "sex": 1,
+                "cp": 4,
+                "trestbps": 160,
+                "chol": 286,
+                "fbs": 0,
+                "restecg": 2,
+                "thalach": 108,
+                "exang": 1,
+                "oldpeak": 1.5,
+                "slope": 2,
+                "ca": 3,
+                "thal": 3,
             },
             {
-                "age": 54, "sex": 0, "cp": 2, "trestbps": 140,
-                "chol": 268, "fbs": 0, "restecg": 2, "thalach": 160,
-                "exang": 0, "oldpeak": 3.6, "slope": 3, "ca": 2, "thal": 3
-            }
+                "age": 54,
+                "sex": 0,
+                "cp": 2,
+                "trestbps": 140,
+                "chol": 268,
+                "fbs": 0,
+                "restecg": 2,
+                "thalach": 160,
+                "exang": 0,
+                "oldpeak": 3.6,
+                "slope": 3,
+                "ca": 2,
+                "thal": 3,
+            },
         ]
     }
 
@@ -150,12 +183,14 @@ def test_batch_prediction():
     result = response.json()
     print(f"Response: {result['total']} predictions")
 
-    for i, pred in enumerate(result['predictions']):
-        print(f"\nPatient {i+1}: {pred['diagnosis']} (confidence: {pred.get('confidence', 'N/A')})")
+    for i, pred in enumerate(result["predictions"]):
+        print(
+            f"\nPatient {i+1}: {pred['diagnosis']} (confidence: {pred.get('confidence', 'N/A')})"
+        )
 
     assert response.status_code == 200, "Batch prediction should return 200"
-    assert result['total'] == 3, "Should have 3 predictions"
-    assert len(result['predictions']) == 3, "Should have 3 predictions in list"
+    assert result["total"] == 3, "Should have 3 predictions"
+    assert len(result["predictions"]) == 3, "Should have 3 predictions in list"
     print("\n✅ Batch prediction test PASSED")
 
 
@@ -201,7 +236,7 @@ def test_out_of_range_values():
         "oldpeak": 2.3,
         "slope": 3,
         "ca": 0,
-        "thal": 6
+        "thal": 6,
     }
 
     response = requests.post(f"{BASE_URL}/predict", json=invalid_patient)
@@ -227,7 +262,7 @@ def run_all_tests():
         test_single_prediction,
         test_batch_prediction,
         test_invalid_input,
-        test_out_of_range_values
+        test_out_of_range_values,
     ]
 
     passed = 0

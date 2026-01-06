@@ -3,32 +3,38 @@ FastAPI application for Heart Disease Prediction Model
 Provides REST API endpoints for making predictions
 """
 
+import logging
+import os
+import pickle
+import sys
+import time
+from datetime import datetime
+from typing import Dict, List, Optional
+
+import numpy as np
+import pandas as pd
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from pydantic import BaseModel, Field, validator
-from typing import Dict, List, Optional
-import pickle
-import pandas as pd
-import numpy as np
-from datetime import datetime
-import os
-import sys
-import logging
-import time
 
 # Add parent directory to path to import src modules
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from src.model_pipeline import HeartDiseasePredictor
 
 # Import monitoring utilities
 try:
     from app.monitoring import (
-        PrometheusMiddleware, metrics_endpoint, track_prediction,
-        track_batch_prediction, set_model_load_time, set_health_status
+        PrometheusMiddleware,
+        metrics_endpoint,
+        set_health_status,
+        set_model_load_time,
+        track_batch_prediction,
+        track_prediction,
     )
+
     MONITORING_ENABLED = True
 except ImportError:
     MONITORING_ENABLED = False
@@ -37,11 +43,8 @@ except ImportError:
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler('logs/api.log', mode='a')
-    ]
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler(), logging.FileHandler("logs/api.log", mode="a")],
 )
 logger = logging.getLogger(__name__)
 
@@ -51,7 +54,7 @@ app = FastAPI(
     description="API for predicting heart disease using machine learning models",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
 )
 
 # Add CORS middleware
@@ -75,18 +78,37 @@ predictor = None
 # Pydantic models for request/response validation
 class PatientData(BaseModel):
     """Patient data for heart disease prediction"""
+
     age: int = Field(..., ge=1, le=120, description="Age in years")
     sex: int = Field(..., ge=0, le=1, description="Sex (1 = male, 0 = female)")
     cp: int = Field(..., ge=1, le=4, description="Chest pain type (1-4)")
-    trestbps: int = Field(..., ge=80, le=200, description="Resting blood pressure (mm Hg)")
+    trestbps: int = Field(
+        ..., ge=80, le=200, description="Resting blood pressure (mm Hg)"
+    )
     chol: int = Field(..., ge=100, le=600, description="Serum cholesterol (mg/dl)")
-    fbs: int = Field(..., ge=0, le=1, description="Fasting blood sugar > 120 mg/dl (1 = true, 0 = false)")
+    fbs: int = Field(
+        ...,
+        ge=0,
+        le=1,
+        description="Fasting blood sugar > 120 mg/dl (1 = true, 0 = false)",
+    )
     restecg: int = Field(..., ge=0, le=2, description="Resting ECG results (0-2)")
     thalach: int = Field(..., ge=60, le=220, description="Maximum heart rate achieved")
-    exang: int = Field(..., ge=0, le=1, description="Exercise induced angina (1 = yes, 0 = no)")
-    oldpeak: float = Field(..., ge=0, le=10, description="ST depression induced by exercise")
-    slope: int = Field(..., ge=1, le=3, description="Slope of peak exercise ST segment (1-3)")
-    ca: int = Field(..., ge=0, le=3, description="Number of major vessels colored by fluoroscopy (0-3)")
+    exang: int = Field(
+        ..., ge=0, le=1, description="Exercise induced angina (1 = yes, 0 = no)"
+    )
+    oldpeak: float = Field(
+        ..., ge=0, le=10, description="ST depression induced by exercise"
+    )
+    slope: int = Field(
+        ..., ge=1, le=3, description="Slope of peak exercise ST segment (1-3)"
+    )
+    ca: int = Field(
+        ...,
+        ge=0,
+        le=3,
+        description="Number of major vessels colored by fluoroscopy (0-3)",
+    )
     thal: int = Field(..., ge=3, le=7, description="Thalassemia (3, 6, 7)")
 
     class Config:
@@ -104,29 +126,38 @@ class PatientData(BaseModel):
                 "oldpeak": 2.3,
                 "slope": 3,
                 "ca": 0,
-                "thal": 6
+                "thal": 6,
             }
         }
 
 
 class BatchPredictionRequest(BaseModel):
     """Batch prediction request"""
+
     patients: List[PatientData] = Field(..., min_items=1, max_items=100)
 
 
 class PredictionResponse(BaseModel):
     """Prediction response"""
-    prediction: int = Field(..., description="Prediction (0 = No Heart Disease, 1 = Heart Disease)")
+
+    prediction: int = Field(
+        ..., description="Prediction (0 = No Heart Disease, 1 = Heart Disease)"
+    )
     diagnosis: str = Field(..., description="Human-readable diagnosis")
     confidence: Optional[float] = Field(None, description="Confidence score")
-    probabilities: Optional[Dict[str, float]] = Field(None, description="Class probabilities")
+    probabilities: Optional[Dict[str, float]] = Field(
+        None, description="Class probabilities"
+    )
     model_used: str = Field(..., description="Model name used for prediction")
     timestamp: str = Field(..., description="Prediction timestamp")
-    model_performance: Optional[Dict[str, float]] = Field(None, description="Model performance metrics")
+    model_performance: Optional[Dict[str, float]] = Field(
+        None, description="Model performance metrics"
+    )
 
 
 class BatchPredictionResponse(BaseModel):
     """Batch prediction response"""
+
     predictions: List[PredictionResponse]
     total: int
     timestamp: str
@@ -134,6 +165,7 @@ class BatchPredictionResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     """Health check response"""
+
     status: str
     model_loaded: bool
     model_name: Optional[str]
@@ -142,6 +174,7 @@ class HealthResponse(BaseModel):
 
 class ModelInfo(BaseModel):
     """Model information response"""
+
     model_name: str
     model_type: str
     features_required: List[str]
@@ -159,8 +192,8 @@ async def startup_event():
         start_time = time.time()
 
         # Initialize predictor
-        model_dir = os.environ.get('MODEL_DIR', 'models')
-        model_name = os.environ.get('MODEL_NAME', 'xgboost')
+        model_dir = os.environ.get("MODEL_DIR", "models")
+        model_name = os.environ.get("MODEL_NAME", "xgboost")
 
         predictor = HeartDiseasePredictor(model_dir=model_dir)
         predictor.load_models(model_name=model_name)
@@ -195,7 +228,7 @@ async def root():
         "message": "Heart Disease Prediction API",
         "version": "1.0.0",
         "docs": "/docs",
-        "health": "/health"
+        "health": "/health",
     }
 
 
@@ -206,7 +239,7 @@ async def health_check():
         "status": "healthy" if predictor and predictor.model else "unhealthy",
         "model_loaded": predictor.model is not None if predictor else False,
         "model_name": predictor.model_name if predictor and predictor.model else None,
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
 
 
@@ -220,10 +253,12 @@ async def get_model_info():
 
     return {
         "model_name": predictor.model_name,
-        "model_type": "XGBoost" if "xgboost" in predictor.model_name.lower() else "ML Classifier",
+        "model_type": (
+            "XGBoost" if "xgboost" in predictor.model_name.lower() else "ML Classifier"
+        ),
         "features_required": features,
         "feature_count": len(features),
-        "performance": predictor.model_metadata if predictor.model_metadata else None
+        "performance": predictor.model_metadata if predictor.model_metadata else None,
     }
 
 
@@ -255,11 +290,12 @@ async def predict(patient: PatientData):
         # Track prediction in metrics
         if MONITORING_ENABLED:
             track_prediction(
-                prediction=result['prediction'],
-                confidence=result.get('confidence')
+                prediction=result["prediction"], confidence=result.get("confidence")
             )
 
-        logger.info(f"Prediction made: {result['diagnosis']} (confidence: {result.get('confidence', 'N/A')})")
+        logger.info(
+            f"Prediction made: {result['diagnosis']} (confidence: {result.get('confidence', 'N/A')})"
+        )
 
         return result
 
@@ -292,8 +328,7 @@ async def predict_batch(request: BatchPredictionRequest):
             track_batch_prediction(len(results))
             for result in results:
                 track_prediction(
-                    prediction=result['prediction'],
-                    confidence=result.get('confidence')
+                    prediction=result["prediction"], confidence=result.get("confidence")
                 )
 
         logger.info(f"Batch prediction completed for {len(results)} patients")
@@ -301,12 +336,14 @@ async def predict_batch(request: BatchPredictionRequest):
         return {
             "predictions": results,
             "total": len(results),
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
     except Exception as e:
         logger.error(f"Batch prediction error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Batch prediction failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Batch prediction failed: {str(e)}"
+        )
 
 
 @app.get("/features", tags=["Model"])
@@ -320,7 +357,7 @@ async def get_features():
     return {
         "features": feature_info,
         "count": len(feature_info),
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
 
 
@@ -357,7 +394,7 @@ async def metrics():
     else:
         raise HTTPException(
             status_code=503,
-            detail="Monitoring not enabled. Install prometheus-client to enable metrics."
+            detail="Monitoring not enabled. Install prometheus-client to enable metrics.",
         )
 
 
@@ -365,10 +402,4 @@ if __name__ == "__main__":
     import uvicorn
 
     # Run server
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
-    )
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")

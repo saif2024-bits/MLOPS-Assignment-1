@@ -3,14 +3,15 @@ Complete Model Pipeline - Heart Disease Prediction
 End-to-end pipeline for reproducible predictions
 """
 
-import pickle
 import json
 import os
+import pickle
+from datetime import datetime
 from pathlib import Path
+from typing import Dict, List, Tuple, Union
+
 import numpy as np
 import pandas as pd
-from typing import Union, Dict, List, Tuple
-from datetime import datetime
 
 
 class HeartDiseasePredictor:
@@ -31,7 +32,7 @@ class HeartDiseasePredictor:
     >>> print(result)
     """
 
-    def __init__(self, model_dir: str = 'models/'):
+    def __init__(self, model_dir: str = "models/"):
         """
         Initialize the predictor
 
@@ -46,7 +47,7 @@ class HeartDiseasePredictor:
         self.model_name = None
         self.model_metadata = {}
 
-    def load_models(self, model_name: str = 'xgboost'):
+    def load_models(self, model_name: str = "xgboost"):
         """
         Load preprocessing pipeline and trained model
 
@@ -60,34 +61,36 @@ class HeartDiseasePredictor:
         self
         """
         # Load preprocessing pipeline
-        pipeline_path = self.model_dir / 'preprocessing_pipeline.pkl'
+        pipeline_path = self.model_dir / "preprocessing_pipeline.pkl"
         if not pipeline_path.exists():
-            raise FileNotFoundError(f"Preprocessing pipeline not found at {pipeline_path}")
+            raise FileNotFoundError(
+                f"Preprocessing pipeline not found at {pipeline_path}"
+            )
 
-        with open(pipeline_path, 'rb') as f:
+        with open(pipeline_path, "rb") as f:
             self.preprocessing_pipeline = pickle.load(f)
         print(f"✅ Loaded preprocessing pipeline from {pipeline_path}")
 
         # Load model
-        model_path = self.model_dir / f'{model_name}_model.pkl'
+        model_path = self.model_dir / f"{model_name}_model.pkl"
         if not model_path.exists():
             raise FileNotFoundError(f"Model not found at {model_path}")
 
-        with open(model_path, 'rb') as f:
+        with open(model_path, "rb") as f:
             self.model = pickle.load(f)
         print(f"✅ Loaded {model_name} model from {model_path}")
 
         self.model_name = model_name
 
         # Load model metadata if available
-        results_path = self.model_dir / 'training_results.json'
+        results_path = self.model_dir / "training_results.json"
         if results_path.exists():
-            with open(results_path, 'r') as f:
+            with open(results_path, "r") as f:
                 results = json.load(f)
                 # Find model name in results
-                for key in results['results'].keys():
-                    if model_name.replace('_', ' ').title() in key:
-                        self.model_metadata = results['results'][key]
+                for key in results["results"].keys():
+                    if model_name.replace("_", " ").title() in key:
+                        self.model_metadata = results["results"][key]
                         break
 
         return self
@@ -107,25 +110,42 @@ class HeartDiseasePredictor:
             Preprocessed features ready for prediction
         """
         if self.preprocessing_pipeline is None:
-            raise ValueError("Preprocessing pipeline not loaded. Call load_models() first.")
+            raise ValueError(
+                "Preprocessing pipeline not loaded. Call load_models() first."
+            )
 
         # Convert to DataFrame if needed
         if isinstance(data, dict):
             data = pd.DataFrame([data])
         elif isinstance(data, np.ndarray):
             # Assume correct feature order
-            feature_names = ['age', 'sex', 'cp', 'trestbps', 'chol', 'fbs',
-                           'restecg', 'thalach', 'exang', 'oldpeak', 'slope', 'ca', 'thal']
-            data = pd.DataFrame(data.reshape(1, -1) if data.ndim == 1 else data,
-                              columns=feature_names)
+            feature_names = [
+                "age",
+                "sex",
+                "cp",
+                "trestbps",
+                "chol",
+                "fbs",
+                "restecg",
+                "thalach",
+                "exang",
+                "oldpeak",
+                "slope",
+                "ca",
+                "thal",
+            ]
+            data = pd.DataFrame(
+                data.reshape(1, -1) if data.ndim == 1 else data, columns=feature_names
+            )
 
         # Apply preprocessing pipeline
         X_processed = self.preprocessing_pipeline.transform(data)
 
         return X_processed
 
-    def predict(self, data: Union[pd.DataFrame, Dict, np.ndarray],
-                return_proba: bool = True) -> Dict:
+    def predict(
+        self, data: Union[pd.DataFrame, Dict, np.ndarray], return_proba: bool = True
+    ) -> Dict:
         """
         Make prediction on input data
 
@@ -151,7 +171,7 @@ class HeartDiseasePredictor:
         prediction = self.model.predict(X_processed)
 
         # Get probability if available
-        if return_proba and hasattr(self.model, 'predict_proba'):
+        if return_proba and hasattr(self.model, "predict_proba"):
             probabilities = self.model.predict_proba(X_processed)
             prob_no_disease = probabilities[0][0]
             prob_disease = probabilities[0][1]
@@ -161,19 +181,27 @@ class HeartDiseasePredictor:
 
         # Format results
         result = {
-            'prediction': int(prediction[0]),
-            'diagnosis': 'Heart Disease Detected' if prediction[0] == 1 else 'No Heart Disease',
-            'confidence': float(prob_disease) if prob_disease is not None else None,
-            'probabilities': {
-                'no_disease': float(prob_no_disease) if prob_no_disease is not None else None,
-                'disease': float(prob_disease) if prob_disease is not None else None
+            "prediction": int(prediction[0]),
+            "diagnosis": (
+                "Heart Disease Detected" if prediction[0] == 1 else "No Heart Disease"
+            ),
+            "confidence": float(prob_disease) if prob_disease is not None else None,
+            "probabilities": {
+                "no_disease": (
+                    float(prob_no_disease) if prob_no_disease is not None else None
+                ),
+                "disease": float(prob_disease) if prob_disease is not None else None,
             },
-            'model_used': self.model_name,
-            'timestamp': datetime.now().isoformat(),
-            'model_performance': {
-                'test_accuracy': self.model_metadata.get('test_accuracy'),
-                'test_roc_auc': self.model_metadata.get('test_roc_auc')
-            } if self.model_metadata else None
+            "model_used": self.model_name,
+            "timestamp": datetime.now().isoformat(),
+            "model_performance": (
+                {
+                    "test_accuracy": self.model_metadata.get("test_accuracy"),
+                    "test_roc_auc": self.model_metadata.get("test_roc_auc"),
+                }
+                if self.model_metadata
+                else None
+            ),
         }
 
         return result
@@ -195,9 +223,9 @@ class HeartDiseasePredictor:
         results = []
 
         for idx in range(len(data)):
-            row = data.iloc[idx:idx+1]
+            row = data.iloc[idx : idx + 1]
             result = self.predict(row)
-            result['record_id'] = idx
+            result["record_id"] = idx
             results.append(result)
 
         return results
@@ -211,8 +239,21 @@ class HeartDiseasePredictor:
         list
             Feature names in expected order
         """
-        return ['age', 'sex', 'cp', 'trestbps', 'chol', 'fbs',
-                'restecg', 'thalach', 'exang', 'oldpeak', 'slope', 'ca', 'thal']
+        return [
+            "age",
+            "sex",
+            "cp",
+            "trestbps",
+            "chol",
+            "fbs",
+            "restecg",
+            "thalach",
+            "exang",
+            "oldpeak",
+            "slope",
+            "ca",
+            "thal",
+        ]
 
     def get_feature_info(self) -> Dict:
         """
@@ -224,22 +265,43 @@ class HeartDiseasePredictor:
             Feature descriptions and valid ranges
         """
         return {
-            'age': {'description': 'Age in years', 'range': '29-77'},
-            'sex': {'description': 'Sex', 'values': '1=male, 0=female'},
-            'cp': {'description': 'Chest pain type', 'values': '1-4'},
-            'trestbps': {'description': 'Resting blood pressure (mm Hg)', 'range': '94-200'},
-            'chol': {'description': 'Serum cholesterol (mg/dl)', 'range': '126-564'},
-            'fbs': {'description': 'Fasting blood sugar > 120 mg/dl', 'values': '1=true, 0=false'},
-            'restecg': {'description': 'Resting ECG results', 'values': '0-2'},
-            'thalach': {'description': 'Maximum heart rate achieved', 'range': '71-202'},
-            'exang': {'description': 'Exercise induced angina', 'values': '1=yes, 0=no'},
-            'oldpeak': {'description': 'ST depression induced by exercise', 'range': '0-6.2'},
-            'slope': {'description': 'Slope of peak exercise ST segment', 'values': '1-3'},
-            'ca': {'description': 'Number of major vessels (0-3)', 'values': '0-3'},
-            'thal': {'description': 'Thalassemia', 'values': '3=normal, 6=fixed defect, 7=reversible defect'}
+            "age": {"description": "Age in years", "range": "29-77"},
+            "sex": {"description": "Sex", "values": "1=male, 0=female"},
+            "cp": {"description": "Chest pain type", "values": "1-4"},
+            "trestbps": {
+                "description": "Resting blood pressure (mm Hg)",
+                "range": "94-200",
+            },
+            "chol": {"description": "Serum cholesterol (mg/dl)", "range": "126-564"},
+            "fbs": {
+                "description": "Fasting blood sugar > 120 mg/dl",
+                "values": "1=true, 0=false",
+            },
+            "restecg": {"description": "Resting ECG results", "values": "0-2"},
+            "thalach": {
+                "description": "Maximum heart rate achieved",
+                "range": "71-202",
+            },
+            "exang": {
+                "description": "Exercise induced angina",
+                "values": "1=yes, 0=no",
+            },
+            "oldpeak": {
+                "description": "ST depression induced by exercise",
+                "range": "0-6.2",
+            },
+            "slope": {
+                "description": "Slope of peak exercise ST segment",
+                "values": "1-3",
+            },
+            "ca": {"description": "Number of major vessels (0-3)", "values": "0-3"},
+            "thal": {
+                "description": "Thalassemia",
+                "values": "3=normal, 6=fixed defect, 7=reversible defect",
+            },
         }
 
-    def save_prediction_log(self, prediction: Dict, log_file: str = 'predictions.log'):
+    def save_prediction_log(self, prediction: Dict, log_file: str = "predictions.log"):
         """
         Save prediction to log file
 
@@ -252,8 +314,8 @@ class HeartDiseasePredictor:
         """
         log_path = self.model_dir / log_file
 
-        with open(log_path, 'a') as f:
-            f.write(json.dumps(prediction) + '\n')
+        with open(log_path, "a") as f:
+            f.write(json.dumps(prediction) + "\n")
 
     @staticmethod
     def create_sample_input() -> pd.DataFrame:
@@ -265,25 +327,34 @@ class HeartDiseasePredictor:
         DataFrame
             Sample patient data
         """
-        return pd.DataFrame([{
-            'age': 63,
-            'sex': 1,
-            'cp': 1,
-            'trestbps': 145,
-            'chol': 233,
-            'fbs': 1,
-            'restecg': 2,
-            'thalach': 150,
-            'exang': 0,
-            'oldpeak': 2.3,
-            'slope': 3,
-            'ca': 0,
-            'thal': 6
-        }])
+        return pd.DataFrame(
+            [
+                {
+                    "age": 63,
+                    "sex": 1,
+                    "cp": 1,
+                    "trestbps": 145,
+                    "chol": 233,
+                    "fbs": 1,
+                    "restecg": 2,
+                    "thalach": 150,
+                    "exang": 0,
+                    "oldpeak": 2.3,
+                    "slope": 3,
+                    "ca": 0,
+                    "thal": 6,
+                }
+            ]
+        )
 
 
-def save_model_package(model, preprocessing_pipeline, model_name: str,
-                       metadata: Dict, output_dir: str = 'models/'):
+def save_model_package(
+    model,
+    preprocessing_pipeline,
+    model_name: str,
+    metadata: Dict,
+    output_dir: str = "models/",
+):
     """
     Save complete model package with all components
 
@@ -304,20 +375,20 @@ def save_model_package(model, preprocessing_pipeline, model_name: str,
     output_path.mkdir(exist_ok=True)
 
     # Save model
-    model_file = output_path / f'{model_name}_model.pkl'
-    with open(model_file, 'wb') as f:
+    model_file = output_path / f"{model_name}_model.pkl"
+    with open(model_file, "wb") as f:
         pickle.dump(model, f)
     print(f"✅ Saved model to {model_file}")
 
     # Save preprocessing pipeline
-    pipeline_file = output_path / 'preprocessing_pipeline.pkl'
-    with open(pipeline_file, 'wb') as f:
+    pipeline_file = output_path / "preprocessing_pipeline.pkl"
+    with open(pipeline_file, "wb") as f:
         pickle.dump(preprocessing_pipeline, f)
     print(f"✅ Saved pipeline to {pipeline_file}")
 
     # Save metadata
-    metadata_file = output_path / f'{model_name}_metadata.json'
-    with open(metadata_file, 'w') as f:
+    metadata_file = output_path / f"{model_name}_metadata.json"
+    with open(metadata_file, "w") as f:
         json.dump(metadata, f, indent=4)
     print(f"✅ Saved metadata to {metadata_file}")
 
@@ -372,8 +443,8 @@ print(result)
 - Privacy concerns with patient data
 """
 
-    card_file = output_path / f'{model_name}_model_card.md'
-    with open(card_file, 'w') as f:
+    card_file = output_path / f"{model_name}_model_card.md"
+    with open(card_file, "w") as f:
         f.write(model_card)
     print(f"✅ Saved model card to {card_file}")
 
@@ -382,16 +453,16 @@ if __name__ == "__main__":
     """
     Example usage and testing
     """
-    print("="*70)
+    print("=" * 70)
     print("MODEL PIPELINE - DEMONSTRATION")
-    print("="*70)
+    print("=" * 70)
 
     # Initialize predictor
-    predictor = HeartDiseasePredictor(model_dir='models/')
+    predictor = HeartDiseasePredictor(model_dir="models/")
 
     # Load best model (XGBoost)
     print("\n1. Loading models...")
-    predictor.load_models(model_name='xgboost')
+    predictor.load_models(model_name="xgboost")
 
     # Create sample input
     print("\n2. Creating sample input...")
@@ -410,20 +481,32 @@ if __name__ == "__main__":
     result = predictor.predict(sample_data)
 
     print(f"\n   Prediction: {result['diagnosis']}")
-    print(f"   Confidence: {result['confidence']:.2%}" if result['confidence'] else "")
+    print(f"   Confidence: {result['confidence']:.2%}" if result["confidence"] else "")
     print(f"   Model: {result['model_used']}")
 
     # Test with dict input
     print("\n5. Testing with dict input...")
     patient_dict = {
-        'age': 54, 'sex': 1, 'cp': 4, 'trestbps': 140, 'chol': 239,
-        'fbs': 0, 'restecg': 0, 'thalach': 160, 'exang': 0,
-        'oldpeak': 1.2, 'slope': 1, 'ca': 0, 'thal': 3
+        "age": 54,
+        "sex": 1,
+        "cp": 4,
+        "trestbps": 140,
+        "chol": 239,
+        "fbs": 0,
+        "restecg": 0,
+        "thalach": 160,
+        "exang": 0,
+        "oldpeak": 1.2,
+        "slope": 1,
+        "ca": 0,
+        "thal": 3,
     }
     result2 = predictor.predict(patient_dict)
     print(f"   Prediction: {result2['diagnosis']}")
-    print(f"   Confidence: {result2['confidence']:.2%}" if result2['confidence'] else "")
+    print(
+        f"   Confidence: {result2['confidence']:.2%}" if result2["confidence"] else ""
+    )
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("MODEL PIPELINE READY FOR PRODUCTION!")
-    print("="*70)
+    print("=" * 70)

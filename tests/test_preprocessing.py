@@ -3,26 +3,27 @@ Unit tests for preprocessing module
 Tests data loading, feature engineering, and preprocessing pipeline
 """
 
-import pytest
-import pandas as pd
-import numpy as np
-import sys
 import os
+import sys
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
+import pytest
+
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 # Define data path
 PROJECT_ROOT = Path(__file__).parent.parent
-DATA_PATH = str(PROJECT_ROOT / 'data' / 'heart_disease_clean.csv')
+DATA_PATH = str(PROJECT_ROOT / "data" / "heart_disease_clean.csv")
 
 from preprocessing import (
-    load_data,
-    create_preprocessing_pipeline,
     FeatureEngineering,
     OutlierHandler,
-    get_feature_info
+    create_preprocessing_pipeline,
+    get_feature_info,
+    load_data,
 )
 
 
@@ -43,10 +44,25 @@ class TestDataLoading:
         """Test that loaded data has correct columns"""
         X, y = load_data(DATA_PATH)
 
-        expected_columns = ['age', 'sex', 'cp', 'trestbps', 'chol', 'fbs',
-                          'restecg', 'thalach', 'exang', 'oldpeak', 'slope', 'ca', 'thal']
+        expected_columns = [
+            "age",
+            "sex",
+            "cp",
+            "trestbps",
+            "chol",
+            "fbs",
+            "restecg",
+            "thalach",
+            "exang",
+            "oldpeak",
+            "slope",
+            "ca",
+            "thal",
+        ]
 
-        assert list(X.columns) == expected_columns, "Columns should match expected features"
+        assert (
+            list(X.columns) == expected_columns
+        ), "Columns should match expected features"
 
     def test_load_data_no_missing_values(self):
         """Test that loaded data has no missing values"""
@@ -67,21 +83,23 @@ class TestFeatureEngineering:
 
     def setup_method(self):
         """Setup test data"""
-        self.X_sample = pd.DataFrame({
-            'age': [63, 67, 54],
-            'sex': [1, 1, 0],
-            'cp': [1, 4, 2],
-            'trestbps': [145, 160, 140],
-            'chol': [233, 286, 268],
-            'fbs': [1, 0, 0],
-            'restecg': [2, 2, 2],
-            'thalach': [150, 108, 160],
-            'exang': [0, 1, 0],
-            'oldpeak': [2.3, 1.5, 3.6],
-            'slope': [3, 2, 3],
-            'ca': [0, 3, 2],
-            'thal': [6, 3, 3]
-        })
+        self.X_sample = pd.DataFrame(
+            {
+                "age": [63, 67, 54],
+                "sex": [1, 1, 0],
+                "cp": [1, 4, 2],
+                "trestbps": [145, 160, 140],
+                "chol": [233, 286, 268],
+                "fbs": [1, 0, 0],
+                "restecg": [2, 2, 2],
+                "thalach": [150, 108, 160],
+                "exang": [0, 1, 0],
+                "oldpeak": [2.3, 1.5, 3.6],
+                "slope": [3, 2, 3],
+                "ca": [0, 3, 2],
+                "thal": [6, 3, 3],
+            }
+        )
 
     def test_feature_engineering_creates_new_features(self):
         """Test that feature engineering creates expected new features"""
@@ -98,7 +116,9 @@ class TestFeatureEngineering:
 
         # Check original columns exist
         for col in self.X_sample.columns:
-            assert col in X_transformed.columns, f"Original feature {col} should be preserved"
+            assert (
+                col in X_transformed.columns
+            ), f"Original feature {col} should be preserved"
 
     def test_feature_engineering_no_interactions(self):
         """Test feature engineering with interactions disabled"""
@@ -113,11 +133,20 @@ class TestFeatureEngineering:
         fe = FeatureEngineering(create_interactions=True)
         X_transformed = fe.fit_transform(self.X_sample)
 
-        expected_new_features = ['age_risk', 'chol_risk', 'bp_risk', 'hr_reserve',
-                                'exercise_capacity', 'cp_exang_interaction', 'age_chol_interaction']
+        expected_new_features = [
+            "age_risk",
+            "chol_risk",
+            "bp_risk",
+            "hr_reserve",
+            "exercise_capacity",
+            "cp_exang_interaction",
+            "age_chol_interaction",
+        ]
 
         for feature in expected_new_features:
-            assert feature in X_transformed.columns, f"New feature {feature} should exist"
+            assert (
+                feature in X_transformed.columns
+            ), f"New feature {feature} should exist"
 
 
 class TestOutlierHandler:
@@ -125,32 +154,34 @@ class TestOutlierHandler:
 
     def setup_method(self):
         """Setup test data with outliers"""
-        self.X_with_outliers = pd.DataFrame({
-            'age': [30, 40, 50, 60, 150],  # 150 is outlier
-            'chol': [200, 220, 240, 260, 1000]  # 1000 is outlier
-        })
+        self.X_with_outliers = pd.DataFrame(
+            {
+                "age": [30, 40, 50, 60, 150],  # 150 is outlier
+                "chol": [200, 220, 240, 260, 1000],  # 1000 is outlier
+            }
+        )
 
     def test_outlier_handler_clips_values(self):
         """Test that outlier handler clips extreme values"""
-        oh = OutlierHandler(method='iqr', factor=1.5)
+        oh = OutlierHandler(method="iqr", factor=1.5)
         X_transformed = oh.fit_transform(self.X_with_outliers)
 
         # Transformed values should be within reasonable range
-        assert X_transformed['age'].max() < 150, "Outlier should be clipped"
-        assert X_transformed['chol'].max() < 1000, "Outlier should be clipped"
+        assert X_transformed["age"].max() < 150, "Outlier should be clipped"
+        assert X_transformed["chol"].max() < 1000, "Outlier should be clipped"
 
     def test_outlier_handler_preserves_normal_values(self):
         """Test that normal values are preserved"""
-        oh = OutlierHandler(method='iqr', factor=1.5)
+        oh = OutlierHandler(method="iqr", factor=1.5)
         X_transformed = oh.fit_transform(self.X_with_outliers)
 
         # Normal values should be unchanged
-        assert X_transformed['age'].iloc[0] == 30, "Normal values should be preserved"
-        assert X_transformed['age'].iloc[1] == 40, "Normal values should be preserved"
+        assert X_transformed["age"].iloc[0] == 30, "Normal values should be preserved"
+        assert X_transformed["age"].iloc[1] == 40, "Normal values should be preserved"
 
     def test_outlier_handler_fit_transform_consistency(self):
         """Test that fit and transform produce consistent results"""
-        oh = OutlierHandler(method='iqr', factor=1.5)
+        oh = OutlierHandler(method="iqr", factor=1.5)
 
         # Fit on data
         oh.fit(self.X_with_outliers)
@@ -172,8 +203,7 @@ class TestPreprocessingPipeline:
     def test_pipeline_creation(self):
         """Test that pipeline is created successfully"""
         pipeline = create_preprocessing_pipeline(
-            handle_outliers=True,
-            feature_engineering=True
+            handle_outliers=True, feature_engineering=True
         )
 
         assert pipeline is not None, "Pipeline should be created"
@@ -182,20 +212,20 @@ class TestPreprocessingPipeline:
     def test_pipeline_fit_transform(self):
         """Test that pipeline can fit and transform data"""
         pipeline = create_preprocessing_pipeline(
-            handle_outliers=True,
-            feature_engineering=True
+            handle_outliers=True, feature_engineering=True
         )
 
         X_transformed = pipeline.fit_transform(self.X)
 
         assert X_transformed.shape[0] == 303, "Should preserve number of samples"
-        assert X_transformed.shape[1] == 20, "Should have 20 features after transformation"
+        assert (
+            X_transformed.shape[1] == 20
+        ), "Should have 20 features after transformation"
 
     def test_pipeline_transform_scales_data(self):
         """Test that pipeline scales data (mean≈0, std≈1)"""
         pipeline = create_preprocessing_pipeline(
-            handle_outliers=True,
-            feature_engineering=True
+            handle_outliers=True, feature_engineering=True
         )
 
         X_transformed = pipeline.fit_transform(self.X)
@@ -207,8 +237,7 @@ class TestPreprocessingPipeline:
     def test_pipeline_without_feature_engineering(self):
         """Test pipeline with feature engineering disabled"""
         pipeline = create_preprocessing_pipeline(
-            handle_outliers=True,
-            feature_engineering=False
+            handle_outliers=True, feature_engineering=False
         )
 
         X_transformed = pipeline.fit_transform(self.X)
@@ -219,12 +248,10 @@ class TestPreprocessingPipeline:
     def test_pipeline_reproducibility(self):
         """Test that pipeline produces consistent results"""
         pipeline1 = create_preprocessing_pipeline(
-            handle_outliers=True,
-            feature_engineering=True
+            handle_outliers=True, feature_engineering=True
         )
         pipeline2 = create_preprocessing_pipeline(
-            handle_outliers=True,
-            feature_engineering=True
+            handle_outliers=True, feature_engineering=True
         )
 
         X_transformed1 = pipeline1.fit_transform(self.X)
@@ -247,7 +274,11 @@ class TestGetFeatureInfo:
         """Test that feature info has required keys"""
         info = get_feature_info()
 
-        required_keys = ['numerical_features', 'categorical_features', 'feature_descriptions']
+        required_keys = [
+            "numerical_features",
+            "categorical_features",
+            "feature_descriptions",
+        ]
         for key in required_keys:
             assert key in info, f"Should have {key} key"
 
@@ -255,8 +286,8 @@ class TestGetFeatureInfo:
         """Test that feature info has correct number of features"""
         info = get_feature_info()
 
-        num_features = len(info['numerical_features'])
-        cat_features = len(info['categorical_features'])
+        num_features = len(info["numerical_features"])
+        cat_features = len(info["categorical_features"])
 
         assert num_features == 5, "Should have 5 numerical features"
         assert cat_features == 8, "Should have 8 categorical features"
@@ -265,4 +296,4 @@ class TestGetFeatureInfo:
 
 if __name__ == "__main__":
     # Run tests
-    pytest.main([__file__, '-v'])
+    pytest.main([__file__, "-v"])
